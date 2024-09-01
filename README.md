@@ -31,9 +31,23 @@ pre-commit install
 ## git config [--user.name/--user.email]
 ```
 
-# 必要な認証情報
+- 開発用のMySQLをローカルに立てる *暫定
+```
+- とりあえずMySQLを立てる
+docker run --name timetutor-mysql -e MYSQL_ROOT_PASSWORD=localp -e MYSQL_DATABASE=timetutor -p 3306:3306 -d mysql
+- 下記DDLを流しておく
+https://github.com/TimeTutor-for-Discord/discord.db#:~:text=about-,ddl/,-master/create_table.sql
+- とりまCLIで接続して確認
+mycli -h localhost -P3306 -uroot -plocalp -Dtimetutor
+show tables
+desc studytimelogs
+あたりを適当にみておく。
+```
+
+## 必要な認証情報
 1. DiscordBOTの認証情報
 [BOTのトークン取得方法](https://discordpy.readthedocs.io/ja/latest/discord.html#discord-intro)
+  - Discord Developer PortalでApplicationを登録し、botで操作する対象のDiscord Serverへ招待しておくこと
 2. Googleのダイナミックリンクの認証情報
 ```sh
 # ファイルをコピーして必要な認証情報を埋め込む
@@ -41,9 +55,13 @@ cp .env.sample .env
 vi .env
 ```
 
+## 起動
+```
+python3 writeStudyTime.py 
+```
+
+
 # 事前準備
-- Dockerをインストールしましょう。Dockerの知識が必要です。
-[https://docs.docker.com/](https://docs.docker.com/)
 - ローカル開発するためのDiscordサーバーを立てておきましょう。
 [サーバー作成方法](https://support.discord.com/hc/ja/articles/204849977-%E3%82%B5%E3%83%BC%E3%83%90%E3%83%BC%E3%81%AE%E4%BD%9C%E6%88%90%E3%81%AE%E4%BB%95%E6%96%B9)
 - BOTをサーバーに登録します
@@ -51,23 +69,3 @@ vi .env
 - サーバーIDは、サーバーネームを右クリック/チャンネルIDは、チャンネルを右クリック
 [ユーザー/サーバー/メッセージIDはどこで見つけられる？](https://support.discord.com/hc/ja/articles/206346498-%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC-%E3%82%B5%E3%83%BC%E3%83%90%E3%83%BC-%E3%83%A1%E3%83%83%E3%82%BB%E3%83%BC%E3%82%B8ID%E3%81%AF%E3%81%A9%E3%81%93%E3%81%A7%E8%A6%8B%E3%81%A4%E3%81%91%E3%82%89%E3%82%8C%E3%82%8B-)
 
-# dockerを使って開発する人向けのメモ
-⚠️ 現在、このリポジトリはDockerfileを作成していないため、以下の手順などは今後のためのメモになります
-## 注意
-- 現状は、ローカルのファイルを変更しても、コンテナ内のファイルは変更されません。
-- 自身でマウントする環境を作るか、変更毎にdockerをbuildし直す必要があります。
-## Docker imageをbuild
-- ~~discord.VCtimeRecord ディレクトリ内で以下コマンドを実行~~
-- ~~厳密にはDockerfileが存在する~~
-- ~~Dockerを起動すると、自動でBotが起動する状態です。~~
-```sh
-docker build . -t discord.VCtimeRecord
-docker run -v $(pwd)/entry_exit/env_vars:/dotfiles -itd discord.VCtimeRecord
-docker ps # discord.VCtimeRecordが上がっていればok
-```
-## 起動したDocker imageのbashでログイン
-```sh
-docker exec -it $(docker ps -lq) bash
-or
-docker exec -it $(docker ps|grep discord.VCtimeRecord|awk -F' ' '{print $1}') bash
-```
