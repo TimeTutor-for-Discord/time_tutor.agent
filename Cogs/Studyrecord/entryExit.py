@@ -12,10 +12,9 @@ class ENTRY_EXIT(commands.Cog):
         self.bot = bot
         self.guild_id = config.GuildId  # もくもくOnline勉強会 # configに切り出す
         self.studytime_tracker_channel_id = config.StudyTimeTrackerChannelId  # 勉強記録   # system_channel的用途。勉強記録のリアタイログを１箇所に出力。これはconfigに切り出す
-        self.pretime_dict = {}
         self.NotRecordChannels = "記録無" # このキーワードが含まれているVCの時間記録は行わない。 @ToDo agent経由でignore対象のカテゴリかVCを登録できるようにしたい
-        self.iri = "<:iri:873655671873212467> "
-        self.de = "<:de:873655671919370262>"
+        self.iri = "<:iri:873655671873212467> " # もくもくサーバで昔利用できたカスタム絵文字。現在はサーバブースト無効化により使用不可
+        self.de = "<:de:873655671919370262>" # もくもくサーバで昔利用できたカスタム絵文字。現在はサーバブースト無効化により使用不可
 
     async def writeLog(self,
                        study_dt,
@@ -49,21 +48,21 @@ class ENTRY_EXIT(commands.Cog):
             Studytimelogs.study_dt.desc()).first()
         return obj
 
-    # メッセージを送信 # どこに送るのかと思えばselfにベタ書きされたもくもくサーバの特定Channel
-    async def sendstudytimelogmsg(self, now, member, channel, access,
-                                  studytime=None):
-        if self.NotRecordChannels in channel.name:
+    # メッセージを送信 # 送信先：self.studytime_tracker_channel_id
+    async def sendstudytimelogmsg(self, now, member, study_room, access,
+                                  study_seconds=None):
+        if self.isNotSubjectToRecord(study_room):
             return
         print(f"[{now}] {member.name} {access}ログをDiscordに出力")
         send_channel = self.bot.get_channel(int(self.studytime_tracker_channel_id))        
         print(f"{send_channel}に勉強記録を送信")
         if access == "in":
             print(f"入室")
-            msg = f"{self.iri} [{now}]  {member.name}  joined the  {channel.name}." # noqa: E501 # flake8の指摘を無視するための記述。 noqa は "No Quality Assurance"
+            msg = f"{self.iri} [{now}]  {member.name}  joined the  {study_room.channel.name}." # noqa: E501 # flake8の指摘を無視するための記述。 noqa は "No Quality Assurance"
         elif access == "out":
             print(f"退室")
-            msg = f"{self.de} [{now}]  {member.name}  Study time  {studytime} /分" # noqa: E501
-        print(f"{msg}\n")
+            msg = f"{self.de} [{now}]  {member.name}  Study time  {int(study_seconds / 60)} /分" # noqa: E501
+        print(f"{msg}")
         await send_channel.send(msg)
 
     # 勉強記録対象外のVCであればTrueを返す
@@ -106,31 +105,30 @@ class ENTRY_EXIT(commands.Cog):
         now = f" {(datetime.utcnow() + timedelta(hours=9)):%m-%d %H:%M} "
         print(f"[{now}]{member.name} : {before.channel}/{after.channel}")
         study_dt = datetime.utcnow() + timedelta(hours=9)
-        # VC入室時 かつ 勉強開始とみなす条件を満たしている場合    
+        # VC入室 かつ 勉強開始とみなす条件を満たしている場合    
         if (self.isStartTheStudySession(before, after)):
-            channel = after.channel
+            print(f'{member.name} : 勉強開始時の処理')
+            study_room = after
             access = "in"
-            self.pretime_dict['beforetime'] = datetime.now()
             # DBに入室記録を登録
-            await self.writeLog(study_dt, member, channel, access)
+            await self.writeLog(study_dt, member, study_room.channel, access)
             # Discord ServerのStudy Tracker Channelにもメッセージを出力
-            await self.sendstudytimelogmsg(now, member, channel, access)
-        # VC退室時 かつ 勉強終了とみなす条件を満たしている場合
+            await self.sendstudytimelogmsg(now, member, study_room, access)
+        # VC退室 かつ 勉強終了とみなす条件を満たしている場合
         elif (self.isFinishTheStudySession(before, after)):
-            channel = before.channel
+            print(f'{member.name} : 勉強終了時の処理')
+            study_room = before
             access = "out"
-            print(f'{member.name} : 退室時の処理')
 
             dtBeforetime = self.splitTime(member).study_dt
             print(f"---> dtDefore: {dtBeforetime}")
             try:
-                duration_time = dtBeforetime - datetime.now()
-                duration_time_adjust = int(duration_time.total_seconds()) * -1
-                print(f"dutation_time_adjust: {duration_time_adjust}")
-                if duration_time_adjust >= lowerLimitToRecord:  # lowerLimitToRecord秒未満は記録しない
+                study_delta   = datetime.now() - dtBeforetime
+                study_seconds = int(study_delta.total_seconds())
+                study_minutes = int(study_seconds / 60) # 小数点以下を切り捨てたいがそのためだけにmathをimportするのも気が引けたのでこれで
+                print(f"study_seconds: {study_seconds}")
+                if study_seconds >= lowerLimitToRecord:  # lowerLimitToRecord秒未満は記録しない
                     print(f'{member.name} : {lowerLimitToRecord}sec以上')
-                    minute_duration_time_adjust = int(
-                        duration_time_adjust)
                     
                     # 日またぎ処理を強引にやっている？普通に計算できそうだけどどうなんだろう @ToDo
                     # 集計レポートの中に曜日ごとの勉強時間などがあったはず。それを行うための前処理をデータ登録時に行っている模様
@@ -150,41 +148,42 @@ class ENTRY_EXIT(commands.Cog):
                         agoday_studytime = int(
                             (dtBeforetime - last_timedate)
                             .total_seconds() * -1) // 60
-                        result_studytimes = [agoday_studytime]
-                        # 00:00:00から退室時までの経過時間を算出
+                        study_times_by_day = [agoday_studytime]
+                        # 00:00:00から退室時までの経過時間を算出 → @ToDo timedaltaの.secondsで取得できるはず
                         day_studytime = int((datetime.combine(date.today(),
                                                               time(0, 0))
                                              - datetime.now())
                                             .total_seconds()) * -1 // 60
-                        result_studytimes.append(day_studytime)
-                        print(f"list:{result_studytimes}")
+                        study_times_by_day.append(day_studytime)
+                        print(f"list:{study_times_by_day}")
                     else:  # 入室と退室が同日の場合の処理
-                        result_studytimes = [minute_duration_time_adjust]
+                        study_times_by_day = [study_minutes]
+
                     # 入退室が別なら要素は２個、要素を反転させて先頭が退出日時、同日なら反転させても先頭が退出日時
-                    result_studytimes.reverse()
-                    for result_time in result_studytimes:
+                    study_times_by_day.reverse()
+                    for result_time in study_times_by_day:
                         print(f"---> {result_time} /min")
                         # 退室時の日時で記録が必要な場合
-                        if result_studytimes.index(result_time) == 0:
+                        if study_times_by_day.index(result_time) == 0:
                             await self.writeLog(study_dt,
                                                 member,
-                                                channel,
+                                                study_room.channel,
                                                 access,
                                                 str(result_time))
                         # 入室時の日時で記録が必要な場合
-                        if result_studytimes.index(result_time) == 1:
+                        if study_times_by_day.index(result_time) == 1:
                             await self.writeLog(last_timedate,
                                                 member,
-                                                channel,
+                                                study_room.channel,
                                                 access,
                                                 str(result_time))
-                    if duration_time_adjust >= lowerLimitToSend:  # lowerLimitToSend秒以上の勉強時間だった場合、勉強終了メッセージをDiscordに出力 @ToDo 謎仕様。ノイズ回避のためかな？
-                        studytime = minute_duration_time_adjust
+                    if study_seconds >= lowerLimitToSend:  # lowerLimitToSend秒以上の勉強時間だった場合、勉強終了メッセージをDiscordに出力 @ToDo 謎仕様。ノイズ回避のためかな？
+                        # Discord Serverへ送信時は分で
                         await self.sendstudytimelogmsg(now,
                                                        member,
-                                                       channel,
+                                                       study_room,
                                                        access,
-                                                       studytime=studytime)
+                                                       study_seconds)
             except KeyError:
                 print(f'{member.name} : except')
                 pass
