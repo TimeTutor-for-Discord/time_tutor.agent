@@ -59,7 +59,7 @@ vi .env
 ```
 python3 writeStudyTime.py 
 ```
-
+- Discord ServerのVC In/Outしてみてstudytimelogsに記録が残れば動作確認OK
 
 # 事前準備
 - ローカル開発するためのDiscordサーバーを立てておきましょう。
