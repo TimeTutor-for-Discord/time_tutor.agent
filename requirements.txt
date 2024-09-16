@@ -1,19 +1,24 @@
 mo9mo9db==0.1.0
-aiohttp==3.6.3
-async-timeout==3.0.1
-attrs==20.3.0
-certifi==2020.12.5
-chardet==3.0.4
+aiohttp>=3.10.5
+async-timeout>=4.0.3
+attrs>=24.2.0
+certifi>=2024.8.30
+chardet>=5.2.0
 discord.py>=2.4.0
-idna==2.10
-multidict==4.7.6
-pre-commit==2.13.0
-python-dateutil==2.8.1
-python-dotenv==0.10.3
-python-magic==0.4.15
-requests==2.25.1
-six==1.15.0
-tqdm==4.56.0
-urllib3==1.26.2
-websockets==8.1
-yarl==1.5.1
+idna>=3.10
+multidict>=6.1.0
+pre-commit>=3.8.0
+python-dateutil>=2.9.0.post0
+python-dotenv>=1.0.1
+python-magic>=0.4.27
+requests>=2.32.3
+six>=1.16.0
+tqdm>=4.66.5
+urllib3<=1.26.20
+websockets>=13.0.1
+yarl>=1.11.1
+
+# 最新版確認用ワンライナー。 Makeターゲット化したいがPythonの実行環境に詳しくなるまでお預け
+# .PHONY: show/latest_dependencies
+# show/latest_dependencies: 
+# 	@while IFS= read -r line; do package=$(echo "$line" | awk -F'==' '{print $1}'); installed_version=$(pip3.9 show "$package" 2>/dev/null | grep Version | awk '{print $2}'); latest_version=$(pip3.9 index versions "$package" 2>/dev/null | grep -e LATEST | awk -F': ' '{print $2}'); if [ "$installed_version" != "$latest_version" ] && [ -n "$installed_version" ]; then echo "pip3.9 install ${package}==${latest_version##   }"; fi; done < requirements.txt
