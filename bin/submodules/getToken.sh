@@ -35,6 +35,6 @@ RES=$(curl -X POST -s -o /dev/null \
 # echo ${RES}
 
 GITHUB_TOKEN=$(echo "${RES}" | grep -o '"token": *"[^"]*' | sed 's/"token": *"//')
-git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+git config url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 git submodule update --init --recursive
 # git submodule update --remote --rebase #これを実行するにはGitHub App側の権限が不足していそうだが詳細は未確認
