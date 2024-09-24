@@ -1,11 +1,19 @@
 # coding: UTF-8
 
 import os
-from os.path import join, dirname
+from os.path import join, dirname, exists
 from dotenv import load_dotenv
 
 dotenv_path = join(os.getcwd(), '.env')
-load_dotenv(dotenv_path)
+
+if exists(dotenv_path):
+    # .envファイルが存在する場合は読み込む
+    load_dotenv(dotenv_path)
+    print(".env file loaded successfully.")
+else:
+    # .envファイルが存在しない場合は環境変数から読み込む
+    print(".env file not found. Using environment variables.")
+
 
 """==============================
 Bot behavior
@@ -33,3 +41,8 @@ Google credential
 =============================="""
 FirebaseAipkey=os.environ.get("FIREBASE_API_KEY")
 FirebaseshortLinksPrefix=os.environ.get("FIREBASE_DYNAMICLINKS_PREFIX")
+
+
+# # 変数が設定されているかを確認
+# if not secret_key or not database_url:
+#     raise EnvironmentError("Required environment variables are missing.")

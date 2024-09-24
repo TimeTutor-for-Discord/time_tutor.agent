@@ -1,0 +1,4 @@
+[submodule "schema"]
+	path = schema
+	url = https://github.com/TimeTutor-for-Discord/time_tutor.schema.git
+	branch = main
