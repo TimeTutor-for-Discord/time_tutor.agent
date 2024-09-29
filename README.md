@@ -7,8 +7,7 @@
 - 今後pep8に準拠した書式で記載する
 - README.mdを最新情報に修正する
 
-
-# 当リポジトリのファイルを事項するための準備
+# 当リポジトリのファイルを実行するための準備
 - 環境はvenvにて作成しています
 - commit時のローカル運用
   - ディレクトリ[.githooks/]にてcommitをトリガーに動く処理を記載しています
@@ -88,4 +87,9 @@ python3.9 writeStudyTime.py
 
 # requirements.txt更新
 ## e.g) aiohttp>=3.10.5
+```
+
+# modelの更新
+```
+make update_models
 ```

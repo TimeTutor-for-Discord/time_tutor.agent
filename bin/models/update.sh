@@ -12,6 +12,7 @@ if [ ! -d ${SCHEMA_PATH} ]; then
 fi
 if [ ! -d ${MODEL_PATH} ]; then mkdir ./models; fi
 
+rm ./models/*.py
 for tgt in $(find "${SCHEMA_PATH}" -type f); do
     tgt_filename=$(basename ${tgt})
     ${CODE_GEN} --input-file-type json --input ${tgt} --output "${MODEL_PATH}/${tgt_filename%.*}.py"
