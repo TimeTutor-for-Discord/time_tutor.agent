@@ -81,3 +81,6 @@ local/update_submodules:
 #==============================
 # Json schema関連
 #==============================
+.PHONY: update_models
+update_models:
+	bash bin/models/update.sh   
