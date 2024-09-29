@@ -28,15 +28,20 @@ signature=$(echo -n "$signing_input" | openssl dgst -sha256 -sign "${GITHUB_APP_
 jwt="$signing_input.$signature"
 # echo "${jwt}"
 
-RES=$(curl -X POST -s -o /dev/null \
+# RES=$(curl -X POST -s -o /dev/null \
+RES=$(curl -X POST -s  \
   -H "Authorization: Bearer ${jwt}" \
   -H "Accept: application/vnd.github+json" \
   https://api.github.com/app/installations/54986641/access_tokens)
 # echo ${RES}
 
 GITHUB_TOKEN=$(echo "${RES}" | grep -o '"token": *"[^"]*' | sed 's/"token": *"//')
-git config url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-git submodule update --init --recursive
-git config --unset url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf 
-
-# git submodule update --remote --rebase #これを実行するにはGitHub App側の権限が不足していそうだが詳細は未確認
+# echo ${GITHUB_TOKEN}
+git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+if [ ! -d schema ]; then
+  git submodule add https://github.com/TimeTutor-for-Discord/time_tutor.schema.git schema
+fi
+git submodule update --init --recursive --remote --rebase
+# git submodule update --remote --rebase
+# cat ~/.gitconfig
+git config --global --unset url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf 
