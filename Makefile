@@ -4,6 +4,10 @@ VENV := venv
 REQUIREMENTS := requirements.txt
 APP := writeStudyTime.py
 
+
+#==================================================
+# ローカル環境で直接APPを動かすためのターゲット群
+#==================================================
 # preparation: 仮想環境セットアップと依存関係解決
 .PHONY: _preparation 
 _preparation: 
@@ -50,6 +54,9 @@ help:
 	@echo "  make test       - Run the tests"
 	@echo "  make clean      - Clean the virtual environment"
 
+#==============================
+# localstack関連
+#==============================
 .PHONY: local/setup
 local/setup: venv/activate
 	@docker run --rm -it -p 4566:4566 -p 4510-4559:4510-4559 localstack/localstack
@@ -68,3 +75,9 @@ local/update_submodules:
 	@bash bin/submodules/getToken.sh
 	# git submodule add https://github.com/TimeTutor-for-Discord/time_tutor.schema.git schema
 	# git submodule update --remote --rebase
+
+# docker run --name timetutor-mysql -e MYSQL_ROOT_PASSWORD=localp -e MYSQL_DATABASE=timetutor -p 3306:3306 -d mysql
+
+#==============================
+# Json schema関連
+#==============================
