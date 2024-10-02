@@ -70,11 +70,11 @@ local/setup: venv/activate
 local/conndb:
 	@mycli -h localhost -P3306 -uroot -plocalp -Dtimetutor
 
-.PHONY: local/update_submodules
-local/update_submodules:
+.PHONY: update_submodules
+update_submodules:
 	@bash bin/submodules/getToken.sh
 	# git submodule add https://github.com/TimeTutor-for-Discord/time_tutor.schema.git schema
-	# git submodule update --remote --rebase
+	git submodule update --remote --rebase
 
 # docker run --name timetutor-mysql -e MYSQL_ROOT_PASSWORD=localp -e MYSQL_DATABASE=timetutor -p 3306:3306 -d mysql
 
